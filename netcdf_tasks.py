@@ -2,14 +2,11 @@ from netCDF4 import Dataset
 import numpy as np
 from PIL import Image, ImageDraw, ImageOps
 from datetime import datetime
-
-source_path = "/home/isilme/python/python/solab/data/S1B_EW_GRDM_1SDH_20171218T133056_20171218T133156_008774_00F9DD_335B/"
-target_path = "/home/isilme/python/python/solab/data/"
-out_file_name = 'tile_site'
+import properties as p
 
 def draw_polygon(file_name, coords):
 
-    nc_file = source_path + file_name
+    nc_file = p.source_path + file_name
     nc_dataset = Dataset(nc_file, 'r')
 
     # Take necessary parameters from file
@@ -30,7 +27,7 @@ def draw_polygon(file_name, coords):
 
     array_coords = get_array_coords(np_ar)
 
-    tile_array = nc_dataset.variables["Data"][6]
+    tile_array = nc_dataset.variables["Data"][p.zoom - 1]
 
     xy = tile_array.shape
 
@@ -42,7 +39,7 @@ def draw_polygon(file_name, coords):
 
     tile.paste(poly, (0,0), mask = poly)
 
-    out_file_fullname = target_path + out_file_name + "_" + datetime.now().strftime("%Y%m%d%H%M%S") + ".png"
+    out_file_fullname = p.target_path + p.out_file_name + "_" + datetime.now().strftime("%Y%m%d%H%M%S") + ".png"
     tile.save(out_file_fullname, 'PNG')
 
     return out_file_fullname
