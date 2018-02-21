@@ -79,6 +79,8 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
+data/
+nohup.out
 # dotenv
 .env
 

@@ -1,43 +1,34 @@
 from netCDF4 import Dataset
 import numpy as np
 from PIL import Image, ImageDraw, ImageOps
+from datetime import datetime
 
-target_path = "./data/"
-out_file_name = 'tile_site.png'
+source_path = "/home/isilme/python/python/solab/data/S1B_EW_GRDM_1SDH_20171218T133056_20171218T133156_008774_00F9DD_335B/"
+target_path = "/home/isilme/python/python/solab/data/"
+out_file_name = 'tile_site'
 
 def draw_polygon(file_name, coords):
 
-    nc_file = target_path + file_name
+    nc_file = source_path + file_name
     nc_dataset = Dataset(nc_file, 'r')
 
     # Take necessary parameters from file
-    bbox_lat_min = getattr(nc_dataset, 'bbox_lat_min')
-    bbox_lon_min = getattr(nc_dataset, 'bbox_lon_min')
-    bbox_lat_max = getattr(nc_dataset, 'bbox_lat_max')
-    bbox_lon_max = getattr(nc_dataset, 'bbox_lon_max')
+    bbox_lat_min = int(getattr(nc_dataset, 'bbox_lat_min'))
+    bbox_lon_min = int(getattr(nc_dataset, 'bbox_lon_min'))
+    bbox_lat_max = int(getattr(nc_dataset, 'bbox_lat_max'))
+    bbox_lon_max = int(getattr(nc_dataset, 'bbox_lon_max'))
     resolution = int(float(getattr(nc_dataset, 'resolution')))
 
-    width = (bbox_lon_max - bbox_lon_min) // resolution
-
-    def coords_to_num(line):
-        ar = []
-        for c in line:
-            ar.append(float(c))
-
-        return ar
-
-    def line_to_tuple(*line, count):
-        return tuple(zip(*[iter(coords_to_num(line))] * count))
+    height = (bbox_lon_max - bbox_lon_min) // resolution
 
     def get_array_coords(meters_coords):
-        xy = []
-        for coord in meters_coords:
-            temp = tuple([int(abs((bbox_lat_min - coord[0]) // resolution)),
-                  width - int(abs((bbox_lon_min - coord[1]) // resolution))])
-            xy.append(temp)
-        return tuple(xy)
+        meters_coords[::2] = (meters_coords[::2] - bbox_lat_min) // resolution
+        meters_coords[1::2] = -(meters_coords[1::2] - bbox_lon_min - height*resolution) // resolution
+        return meters_coords
 
-    array_coords = (get_array_coords(line_to_tuple(*coords, count = 2)))
+    np_ar = np.asarray(coords, dtype=np.int32)
+
+    array_coords = get_array_coords(np_ar)
 
     tile_array = nc_dataset.variables["Data"][6]
 
@@ -51,7 +42,7 @@ def draw_polygon(file_name, coords):
 
     tile.paste(poly, (0,0), mask = poly)
 
+    out_file_fullname = target_path + out_file_name + "_" + datetime.now().strftime("%Y%m%d%H%M%S") + ".png"
+    tile.save(out_file_fullname, 'PNG')
 
-    tile.save(target_path + out_file_name, 'PNG')
-
-    return target_path + out_file_name
+    return out_file_fullname
